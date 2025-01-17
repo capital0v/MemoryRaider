@@ -18,7 +18,7 @@ namespace Capitalov
         [DllImport("kernel32.dll")]
         private static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int size, IntPtr lpNumberOfBytesWritten);
 
-        private Process? _process;
+        private Process _process = new Process();
 
         public void Inject(string processName)
         {

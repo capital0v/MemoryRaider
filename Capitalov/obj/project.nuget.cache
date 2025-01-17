@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "zJRHHjEQ9HE=",
+  "dgSpecHash": "Wva1bkhpLgg=",
   "success": true,
-  "projectFilePath": "C:\\Users\\danya\\source\\repos\\Capitalov\\Capitalov.csproj",
+  "projectFilePath": "C:\\Users\\danya\\Documents\\GitHub\\Capitalov\\Capitalov\\Capitalov.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\danya\\.nuget\\packages\\microsoft.net.sdk.compilers.toolset\\9.0.100\\microsoft.net.sdk.compilers.toolset.9.0.100.nupkg.sha512",
     "C:\\Users\\danya\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.11\\microsoft.windowsdesktop.app.ref.8.0.11.nupkg.sha512",

@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\danya\\source\\repos\\Capitalov\\Capitalov.csproj",
+      "projectUniqueName": "C:\\Users\\danya\\Documents\\GitHub\\Capitalov\\Capitalov\\Capitalov.csproj",
       "projectName": "Capitalov",
-      "projectPath": "C:\\Users\\danya\\source\\repos\\Capitalov\\Capitalov.csproj",
+      "projectPath": "C:\\Users\\danya\\Documents\\GitHub\\Capitalov\\Capitalov\\Capitalov.csproj",
       "packagesPath": "C:\\Users\\danya\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\danya\\source\\repos\\Capitalov\\obj\\",
+      "outputPath": "C:\\Users\\danya\\Documents\\GitHub\\Capitalov\\Capitalov\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
