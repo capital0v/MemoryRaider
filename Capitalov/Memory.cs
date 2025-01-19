@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -71,6 +74,7 @@ namespace Capitalov
         public IntPtr ReadPointer(IntPtr ptr, int[] offsets)
         {
             IntPtr intPtr = ptr;
+
             foreach (int offset in offsets)
             {
                 intPtr = ReadPointer(intPtr, offset);
@@ -82,6 +86,7 @@ namespace Capitalov
         public IntPtr ReadPointer(IntPtr ptr, long[] offsets)
         {
             IntPtr intPtr = ptr;
+
             foreach (long offset in offsets)
             {
                 intPtr = ReadPointer(intPtr, offset);
@@ -274,6 +279,34 @@ namespace Capitalov
             return BitConverter.ToChar(ReadBytes(address + offset, 2));
         }
 
+        public Vector3 ReadVec(IntPtr address)
+        {
+            int length = 12;
+
+            var bytes = ReadBytes(address, length);
+
+            return new Vector3
+            {
+                X = BitConverter.ToSingle(bytes, 0),
+                Y = BitConverter.ToSingle(bytes, 4),
+                Z = BitConverter.ToSingle(bytes, 8)
+            };
+        }
+
+        public Vector3 ReadVec(IntPtr address, int offset)
+        {
+            int length = 12;
+
+            var bytes = ReadBytes(address + offset, length);
+
+            return new Vector3
+            {
+                X = BitConverter.ToSingle(bytes, 0),
+                Y = BitConverter.ToSingle(bytes, 4),
+                Z = BitConverter.ToSingle(bytes, 8)
+            };
+        }
+
         public bool WriteBytes(IntPtr address, byte[] newbytes)
         {
             return WriteProcessMemory(_process.Handle, address, newbytes, newbytes.Length, IntPtr.Zero);
@@ -286,15 +319,13 @@ namespace Capitalov
 
         public bool WriteBytes(IntPtr address, string newbytes)
         {
-            byte[] array = (from b in newbytes.Split(' ')
-                            select Convert.ToByte(b, 16)).ToArray();
+            byte[] array = (from _byte in newbytes.Split(' ') select Convert.ToByte(_byte, 16)).ToArray();
             return WriteProcessMemory(_process.Handle, address, array, array.Length, IntPtr.Zero);
         }
 
         public bool WriteBytes(IntPtr address, int offset, string newbytes)
         {
-            byte[] array = (from b in newbytes.Split(' ')
-                            select Convert.ToByte(b, 16)).ToArray();
+            byte[] array = (from _byte in newbytes.Split(' ') select Convert.ToByte(_byte, 16)).ToArray();
             return WriteProcessMemory(_process.Handle, address + offset, array, array.Length, IntPtr.Zero);
         }
 
@@ -391,6 +422,36 @@ namespace Capitalov
         public bool WriteString(IntPtr address, string value)
         {
             return WriteBytes(address, Encoding.UTF8.GetBytes(value));
+        }
+
+        public bool WriteVec(IntPtr address, Vector3 value)
+        {
+            byte[] array = new byte[12];
+
+            byte[] x = BitConverter.GetBytes(value.X);
+            byte[] y = BitConverter.GetBytes(value.Y);
+            byte[] z = BitConverter.GetBytes(value.Z);
+
+            x.CopyTo(array, 0);
+            y.CopyTo(array, 4);
+            z.CopyTo(array, 8);
+
+            return WriteBytes(address, array);
+        }
+
+        public bool WriteVec(IntPtr address, int offset, Vector3 value)
+        {
+            byte[] array = new byte[12];
+
+            byte[] x = BitConverter.GetBytes(value.X);
+            byte[] y = BitConverter.GetBytes(value.Y);
+            byte[] z = BitConverter.GetBytes(value.Z);
+
+            x.CopyTo(array, 0);
+            y.CopyTo(array, 4);
+            z.CopyTo(array, 8);
+
+            return WriteBytes(address + offset, array);
         }
     }
 }
