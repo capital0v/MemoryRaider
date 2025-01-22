@@ -7,16 +7,16 @@ Memory Raider is a library for working with process memory in Windows. It allows
 To use the library, add a reference to the `Capitalov` project in your C# project.
 
 ## Main Methods
-- `Inject(string processName)`: "Injects into a process by name."
-- `"GetModuleBase(string moduleName)`: Retrieves the base address of a module."
-- `"ReadPointer(IntPtr ptr, params int[] offsets)`: Reads a pointer with offsets."
-- `"ReadBytes(IntPtr ptr, int bytes)`: Reads an array of bytes from memory."
-- `"Read<T>(IntPtr address)`: Reads a structure from memory."
-- `"WriteBytes(IntPtr address, byte[] newbytes)`: Writes an array of bytes to memory."
-- `"Write<T>(IntPtr address, T value)`: Writes a structure to memory."
-- `"ReadVector(IntPtr address)`: Reads a vector from memory."
-- `"WriteVector(IntPtr address, Vector3 value)`: Writes a vector to memory."
-- `"ReadString(IntPtr address, int length)`: Reads a string from memory."
+- `Inject(string processName)`: "Injects into a process by name
+- `GetModuleBase(string moduleName)`: Retrieves the base address of a module
+- `ReadPointer(IntPtr ptr, params int[] offsets)`: Reads a pointer with offsets
+- `ReadBytes(IntPtr ptr, int bytes)`: Reads an array of bytes from memory
+- `Read<T>(IntPtr address)`: Reads a structure from memory
+- `WriteBytes(IntPtr address, byte[] newbytes)`: Writes an array of bytes to memory
+- `Write<T>(IntPtr address, T value)`: Writes a structure to memory
+- `ReadVector(IntPtr address)`: Reads a vector from memory
+- `WriteVector(IntPtr address, Vector3 value)`: Writes a vector to memory
+- `ReadString(IntPtr address, int length)`: Reads a string from memory
 
 ## Usage Example
 
@@ -51,7 +51,7 @@ class Program
 
 ```
 
-![Example of reading a value](https://github.com/capital0v/MemoryRaider/tree/main/img/preview.png)
+![Example of reading a value](img/preview.png)
 
 ## License
 
