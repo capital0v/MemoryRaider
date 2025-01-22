@@ -51,7 +51,7 @@ class Program
 
 ```
 
-![Example of reading a value](https://raw.githubusercontent.com/capital0v/MemoryRaider/tree/main/img/preview.png)
+![Example of reading a value](https://github.com/capital0v/MemoryRaider/tree/main/img/preview.png)
 
 ## License
 

@@ -3,7 +3,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Capitalov
+namespace Capitalov86
 {
     public class MemoryRaider
     {
