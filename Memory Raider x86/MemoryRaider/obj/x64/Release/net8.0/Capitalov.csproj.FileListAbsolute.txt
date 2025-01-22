@@ -1,0 +1,12 @@
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\obj\x64\Release\net8.0\Capitalov.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\obj\x64\Release\net8.0\Capitalov.AssemblyInfoInputs.cache
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\obj\x64\Release\net8.0\Capitalov.AssemblyInfo.cs
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\obj\x64\Release\net8.0\Capitalov.csproj.CoreCompileInputs.cache
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\obj\x64\Release\net8.0\Capitalov.sourcelink.json
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\bin\x64\Release\net8.0\Capitalov.deps.json
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\bin\x64\Release\net8.0\Capitalov.dll
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\bin\x64\Release\net8.0\Capitalov.pdb
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\obj\x64\Release\net8.0\Capitalov.dll
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\obj\x64\Release\net8.0\refint\Capitalov.dll
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\obj\x64\Release\net8.0\Capitalov.pdb
+C:\Users\danya\Documents\GitHub\Capitalov\Capitalov\obj\x64\Release\net8.0\ref\Capitalov.dll
