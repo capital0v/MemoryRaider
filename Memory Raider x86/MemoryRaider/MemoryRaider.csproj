@@ -7,8 +7,8 @@
 		<Platforms>x64;x86</Platforms>
 		<SignAssembly>False</SignAssembly>
 
-		<Version>1.2.1</Version>
-		<PackageVersion>1.2.1</PackageVersion>
+		<Version>1.2.2</Version>
+		<PackageVersion>1.2.2</PackageVersion>
 	</PropertyGroup>
 
 </Project>

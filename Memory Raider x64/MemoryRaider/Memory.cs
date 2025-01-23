@@ -3,7 +3,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Capitalov64
+namespace Capitalov
 {
     public class MemoryRaider
     {
@@ -36,6 +36,18 @@ namespace Capitalov64
             return IntPtr.Zero;
         }
 
+        public List<string> GetModules()
+        {
+            List<string> modules = new List<string>();
+
+            foreach (ProcessModule module in _process.Modules)
+            {
+                modules.Add(module.ModuleName);
+            }
+
+            return modules;
+        }
+
         public IntPtr ReadPointer(IntPtr ptr, params int[] offsets)
         {
             foreach (var offset in offsets)
@@ -59,6 +71,7 @@ namespace Capitalov64
         {
             var size = Marshal.SizeOf(typeof(T));
             var bytes = ReadBytes(address, size);
+
             return ByteArrayToStructure<T>(bytes);
         }
 
@@ -94,6 +107,7 @@ namespace Capitalov64
             var size = Marshal.SizeOf(typeof(T));
             var bytes = new byte[size];
             var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+
             try
             {
                 Marshal.StructureToPtr(obj, handle.AddrOfPinnedObject(), false);
@@ -102,6 +116,7 @@ namespace Capitalov64
             {
                 handle.Free();
             }
+
             return bytes;
         }
 
