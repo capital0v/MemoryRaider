@@ -7,14 +7,19 @@ namespace Capitalov
 {
     public class MemoryRaider
     {
+        #region import
         [DllImport("kernel32.dll")]
         private static extern bool CloseHandle(IntPtr hObject);
 
         [DllImport("Kernel32.dll")]
         private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int nSize, IntPtr lpNumberOfBytesRead);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("Kernel32.dll")]
         private static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int size, IntPtr lpNumberOfBytesWritten);
+
+        [DllImport("kernel32.dll")]
+        private static extern uint VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
+        #endregion
 
         private Process _process;
 
@@ -52,9 +57,9 @@ namespace Capitalov
         {
             foreach (var offset in offsets)
             {
-                byte[] array = new byte[8];
-                ReadProcessMemory(_process.Handle, ptr + offset, array, array.Length, IntPtr.Zero);
-                ptr = (IntPtr)BitConverter.ToInt64(array);
+                byte[] buffer = new byte[8];
+                ReadProcessMemory(_process.Handle, ptr + offset, buffer, buffer.Length, IntPtr.Zero);
+                ptr = (IntPtr)BitConverter.ToInt64(buffer);
             }
 
             return ptr;
@@ -62,9 +67,10 @@ namespace Capitalov
 
         public byte[] ReadBytes(IntPtr ptr, int bytes)
         {
-            byte[] array = new byte[bytes];
-            ReadProcessMemory(_process.Handle, ptr, array, array.Length, IntPtr.Zero);
-            return array;
+            byte[] buffer = new byte[bytes];
+            ReadProcessMemory(_process.Handle, ptr, buffer, buffer.Length, IntPtr.Zero);
+
+            return buffer;
         }
 
         public T Read<T>(IntPtr address) where T : struct
@@ -79,6 +85,7 @@ namespace Capitalov
         {
             T result;
             var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+
             try
             {
                 result = (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
@@ -144,5 +151,53 @@ namespace Capitalov
         {
             return WriteBytes(address, Encoding.UTF8.GetBytes(value));
         }
+
+        public void ChangeValue<T>(T oldValue, T newValue) where T : struct
+        {
+            IntPtr address = IntPtr.Zero;
+            MEMORY_BASIC_INFORMATION mbi;
+
+            while (VirtualQueryEx(_process.Handle, address, out mbi, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION))) != 0)
+            {
+                if (mbi.State == 0x1000)
+                {
+                    byte[] buffer = new byte[mbi.RegionSize.ToInt32()];
+                    int bytesRead = 0;
+
+                    if (ReadProcessMemory(_process.Handle, mbi.BaseAddress, buffer, buffer.Length, IntPtr.Zero))
+                    {
+                        bytesRead = buffer.Length;
+
+                        int size = Marshal.SizeOf(typeof(T));
+                        for (int i = 0; i <= bytesRead - size; i++)
+                        {
+                            T value = ByteArrayToStructure<T>(buffer.Skip(i).Take(size).ToArray());
+
+                            if (EqualityComparer<T>.Default.Equals(value, oldValue))
+                            {
+                                byte[] newValueBytes = StructureToByteArray(newValue);
+                                WriteProcessMemory(_process.Handle, mbi.BaseAddress + i, newValueBytes, newValueBytes.Length, IntPtr.Zero);
+                            }
+                        }
+                    }
+                }
+
+                address = (IntPtr)((long)mbi.BaseAddress + mbi.RegionSize.ToInt64());
+            }
+        }
+
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MEMORY_BASIC_INFORMATION
+        {
+            public IntPtr BaseAddress;
+            public IntPtr AllocationBase;
+            public uint AllocationProtect;
+            public IntPtr RegionSize;
+            public uint State;
+            public uint Protect;
+            public uint Type;
+        }
     }
 }
+

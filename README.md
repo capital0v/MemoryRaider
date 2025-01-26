@@ -1,58 +1,76 @@
-# Memory Raider Library
+# MemoryRaider Documentation
 
-Memory Raider is a library for working with process memory in Windows. It allows you to read and write data in the memory of other processes.
+## Overview
+
+`MemoryRaider` is a C# library designed for reading and writing memory of other processes. It provides functionality to inject into a process, read and write various data types, and manipulate memory directly. This can be useful for debugging, game hacking, or any application that requires direct memory access.
+
+## Features
+
+- **Process Injection**: Attach to a running process by its name.
+- **Module Management**: Retrieve loaded modules and their base addresses.
+- **Memory Reading**: Read bytes, structures, pointers, and strings from the target process's memory.
+- **Memory Writing**: Write bytes, structures, and strings to the target process's memory.
+- **Value Manipulation**: Change specific values in memory by searching for them.
 
 ## Installation
 
 To use the library, add a reference to the `Capitalov` project in your C# project.
 
-## Main Methods
-- `Inject(string processName)`: "Injects into a process by name
-- `GetModuleBase(string moduleName)`: Retrieves the base address of a module
-- `ReadPointer(IntPtr ptr, params int[] offsets)`: Reads a pointer with offsets
-- `ReadBytes(IntPtr ptr, int bytes)`: Reads an array of bytes from memory
-- `Read<T>(IntPtr address)`: Reads a structure from memory
-- `WriteBytes(IntPtr address, byte[] newbytes)`: Writes an array of bytes to memory
-- `Write<T>(IntPtr address, T value)`: Writes a structure to memory
-- `ReadVector(IntPtr address)`: Reads a vector from memory
-- `WriteVector(IntPtr address, Vector3 value)`: Writes a vector to memory
-- `ReadString(IntPtr address, int length)`: Reads a string from memory
+## Usage
 
-## Usage Example
+### Injecting into a Process
 
-Here’s a simple example demonstrating how to use the Memory Raider library:
+To start using `MemoryRaider`, you need to inject into a process:
 
 ```csharp
-using System;
-using System.Threading;
 using Capitalov;
-
-class Program
-{
-    static void Main(string[] args)
-    {
-        MemoryRaider memory = new MemoryRaider();
-
-        memory.Inject("MyGame");
-
-        IntPtr client = memory.GetModuleBase("test.dll");
-
-        int baseAddress = 0x123456;
-        int offset = 0x12;
-
-        while (true)
-        {
-            IntPtr pointer = memory.ReadPointer(client, baseAddress);
-            memory.Write<float>(pointer + offset, 10);
-            Thread.Sleep(1);
-        }
-    }
-}
-
+MemoryRaider raider = new MemoryRaider();
+raider.Inject("processName");
 ```
 
-![Example of reading a value](https://github.com/capital0v/MemoryRaider/tree/main/img/preview.png)
-
+## Reading Memory
+#### Read Pointer
+```csharp
+IntPtr baseAddress = raider.GetModuleBase("moduleName.dll");
+IntPtr pointer = raider.ReadPointer(baseAddress, 0x10, 0x20); // Example offsets
+```
+### Read Bytes
+#### To read a specific number of bytes:
+```csharp
+byte[] data = raider.ReadBytes(pointer, 64); // Read 64 bytes
+```
+### Read Vector
+#### To read a Vector3 from memory:
+```csharp
+Vector3 position = raider.ReadVector(pointer);
+```
+### Read String
+#### To read a string from memory:
+```csharp
+string myString = raider.ReadString(pointer, 20); // Read 20 bytes as a string
+```
+## Writing Memory
+### Write Bytes
+#### To write bytes to memory:
+```csharp
+byte[] newData = new byte[] { 0x01, 0x02, 0x03 };
+raider.WriteBytes(pointer, newData);
+```
+### Write Vector
+#### To write a Vector3 to memory:
+```csharp
+Vector3 newPosition = new Vector3(1.0f, 2.0f, 3.0f);
+raider.WriteVector(pointer, newPosition);
+```
+### Write String
+#### To write a string to memory:
+```csharp
+raider.WriteString(pointer, "Hello, World!");
+```
+## Changing Values
+### To change a specific value in memory:
+```csharp
+raider.ChangeValue(oldValue, newValue);
+```
 ## License
-
 [MIT](https://github.com/capital0v/MemoryRaider/blob/main/LICENSE)
