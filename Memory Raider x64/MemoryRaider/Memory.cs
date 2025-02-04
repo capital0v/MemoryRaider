@@ -152,6 +152,31 @@ namespace Capitalov
             return WriteBytes(address, Encoding.UTF8.GetBytes(value));
         }
 
+        public bool Nop(IntPtr address, int length)
+        {
+            byte[] buffer = new byte[length];
+
+            for (int i = 0; i < length; i++)
+            {
+                buffer[i] = 0x90;
+            }
+
+            return WriteBytes(address, buffer);
+        }
+
+        public float[] ReadMatrix(IntPtr address)
+        {
+            var bytes = ReadBytes(address, 4 * 16);
+            var matrix = new float[16];
+
+            for (int i = 0; i < 16; i++)
+            {
+                matrix[i] = BitConverter.ToSingle(bytes, i * 4);
+            }
+
+            return matrix;
+        }
+
         public void ChangeValue<T>(T oldValue, T newValue) where T : struct
         {
             IntPtr address = IntPtr.Zero;
