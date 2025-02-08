@@ -53,16 +53,18 @@ namespace Capitalov
             return modules;
         }
 
-        public IntPtr ReadPointer(IntPtr ptr, params int[] offsets)
+        public IntPtr ReadPointer(IntPtr ptr)
         {
-            foreach (var offset in offsets)
-            {
-                byte[] buffer = new byte[4];
-                ReadProcessMemory(_process.Handle, ptr + offset, buffer, buffer.Length, IntPtr.Zero);
-                ptr = (IntPtr)BitConverter.ToInt32(buffer);
-            }
+            byte[] buffer = new byte[4];
 
-            return ptr;
+            if (ReadProcessMemory(_process.Handle, ptr, buffer, buffer.Length, IntPtr.Zero))
+            {
+                return (IntPtr)BitConverter.ToInt32(buffer);
+            }
+            else
+            {
+                throw new Exception("Failed to read memory");
+            }
         }
 
         public byte[] ReadBytes(IntPtr ptr, int bytes)
@@ -81,6 +83,34 @@ namespace Capitalov
             return ByteArrayToStructure<T>(bytes);
         }
 
+        public Vector3 ReadVector(IntPtr address)
+        {
+            return new Vector3(Read<float>(address), Read<float>(address + 4), Read<float>(address + 8));
+        }
+
+        public string ReadString(IntPtr address, int length)
+        {
+            return Encoding.UTF8.GetString(ReadBytes(address, length));
+        }
+
+        public string ReadString(IntPtr address, int offset, int length)
+        {
+            return Encoding.UTF8.GetString(ReadBytes(address + offset, length));
+        }
+
+        public float[] ReadMatrix(IntPtr address)
+        {
+            var bytes = ReadBytes(address, 4 * 16);
+            var matrix = new float[16];
+
+            for (int i = 0; i < 16; i++)
+            {
+                matrix[i] = BitConverter.ToSingle(bytes, i * 4);
+            }
+
+            return matrix;
+        }
+
         private T ByteArrayToStructure<T>(byte[] bytes) where T : struct
         {
             T result;
@@ -96,17 +126,6 @@ namespace Capitalov
             }
 
             return result;
-        }
-
-        public bool WriteBytes(IntPtr address, byte[] newbytes)
-        {
-            return WriteProcessMemory(_process.Handle, address, newbytes, newbytes.Length, IntPtr.Zero);
-        }
-
-        public bool Write<T>(IntPtr address, T value) where T : struct
-        {
-            var bytes = StructureToByteArray(value);
-            return WriteBytes(address, bytes);
         }
 
         private byte[] StructureToByteArray<T>(T obj) where T : struct
@@ -127,24 +146,20 @@ namespace Capitalov
             return bytes;
         }
 
-        public Vector3 ReadVector(IntPtr address)
+        public bool WriteBytes(IntPtr address, byte[] newbytes)
         {
-            return new Vector3(Read<float>(address), Read<float>(address + 4), Read<float>(address + 8));
+            return WriteProcessMemory(_process.Handle, address, newbytes, newbytes.Length, IntPtr.Zero);
+        }
+
+        public bool Write<T>(IntPtr address, T value) where T : struct
+        {
+            var bytes = StructureToByteArray(value);
+            return WriteBytes(address, bytes);
         }
 
         public bool WriteVector(IntPtr address, Vector3 value)
         {
             return Write(address, value.X) && Write(address + 4, value.Y) && Write(address + 8, value.Z);
-        }
-
-        public string ReadString(IntPtr address, int length)
-        {
-            return Encoding.UTF8.GetString(ReadBytes(address, length));
-        }
-
-        public string ReadString(IntPtr address, int offset, int length)
-        {
-            return Encoding.UTF8.GetString(ReadBytes(address + offset, length));
         }
 
         public bool WriteString(IntPtr address, string value)
@@ -162,19 +177,6 @@ namespace Capitalov
             }
 
             return WriteBytes(address, buffer);
-        }
-
-        public float[] ReadMatrix(IntPtr address)
-        {
-            var bytes = ReadBytes(address, 4 * 16);
-            var matrix = new float[16];
-
-            for (int i = 0; i < 16; i++)
-            {
-                matrix[i] = BitConverter.ToSingle(bytes, i * 4);
-            }
-
-            return matrix;
         }
 
         public void ChangeValue<T>(T oldValue, T newValue) where T : struct
@@ -211,8 +213,8 @@ namespace Capitalov
             }
         }
 
-
         [StructLayout(LayoutKind.Sequential)]
+
         public struct MEMORY_BASIC_INFORMATION
         {
             public IntPtr BaseAddress;
