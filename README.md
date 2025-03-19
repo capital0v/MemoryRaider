@@ -20,12 +20,12 @@ To use the library, add a reference to the `Capitalov` project in your C# projec
 
 ### Injecting into a Process
 
-To start using `MemoryRaider`, you need to inject into a process:
+To start using `MemoryRaider`, you need to capture the process:
 
 ```csharp
 using Capitalov;
 MemoryRaider raider = new MemoryRaider();
-raider.Inject("processName");
+raider.Attach("processName");
 ```
 
 ## Reading Memory

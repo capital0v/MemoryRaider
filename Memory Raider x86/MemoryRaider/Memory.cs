@@ -23,7 +23,7 @@ namespace Capitalov
 
         private Process _process;
 
-        public void Inject(string processName)
+        public void Attach(string processName)
         {
             _process = Process.GetProcessesByName(processName)[0];
         }
