@@ -6,11 +6,11 @@
 
 ## Features
 
-- **Process Injection**: Attach to a running process by its name.
+- **Process Attachment**: Attach to a running 64-bit process by its name.
 - **Module Management**: Retrieve loaded modules and their base addresses.
 - **Memory Reading**: Read bytes, structures, pointers, and strings from the target process's memory.
 - **Memory Writing**: Write bytes, structures, and strings to the target process's memory.
-- **Value Manipulation**: Change specific values in memory by searching for them.
+- **Memory Scanning**: Scan memory for specific values and retrieve their addresses.
 
 ## Installation
 
@@ -32,7 +32,13 @@ raider.Attach("processName");
 #### Read Pointer
 ```csharp
 IntPtr baseAddress = raider.GetModuleBase("moduleName.dll");
-IntPtr pointer = raider.ReadPointer(baseAddress, 0x10, 0x20); // Example offsets
+IntPtr pointer = raider.ReadPointer(baseAddress + 0x10); // Example offset
+```
+### Read Values
+#### To read a value of a specific type (e.g., int, float, double):
+```csharp
+int value = raider.Read<int>(pointer);
+float floatValue = raider.Read<float>(pointer);
 ```
 ### Read Bytes
 #### To read a specific number of bytes:
@@ -49,6 +55,12 @@ Vector3 position = raider.ReadVector(pointer);
 ```csharp
 string myString = raider.ReadString(pointer, 20); // Read 20 bytes as a string
 ```
+### Read Matrix
+#### To read a 4x4 matrix (array of 16 floats) from memory:
+```csharp
+float[] matrix = raider.ReadMatrix(pointer);
+```
+
 ## Writing Memory
 ### Write Bytes
 #### To write bytes to memory:
@@ -67,10 +79,14 @@ raider.WriteVector(pointer, newPosition);
 ```csharp
 raider.WriteString(pointer, "Hello, World!");
 ```
-## Changing Values
-### To change a specific value in memory:
+## Value Scanning
+### To scan the process memory for a specific value:
 ```csharp
-raider.ChangeValue(oldValue, newValue);
+var results = raider.ScanValue<float>(-9.12f); // Scan for float value -9.12
+foreach (var result in results)
+{
+    Console.WriteLine($"Address: {result.Key}, Value: {result.Value}");
+}
 ```
 ## License
 [MIT](https://github.com/capital0v/MemoryRaider/blob/main/LICENSE)

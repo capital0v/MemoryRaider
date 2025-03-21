@@ -7,29 +7,84 @@ namespace Capitalov
 {
     public class MemoryRaider
     {
-        #region import
+        #region Imports
+
         [DllImport("kernel32.dll")]
         private static extern bool CloseHandle(IntPtr hObject);
 
         [DllImport("Kernel32.dll")]
-        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int nSize, IntPtr lpNumberOfBytesRead);
+        private static extern bool ReadProcessMemory(
+            IntPtr hProcess,
+            IntPtr lpBaseAddress,
+            [Out] byte[] lpBuffer,
+            int nSize,
+            IntPtr lpNumberOfBytesRead
+        );
 
         [DllImport("Kernel32.dll")]
-        private static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int size, IntPtr lpNumberOfBytesWritten);
+        private static extern bool WriteProcessMemory(
+            IntPtr hProcess,
+            IntPtr lpBaseAddress,
+            byte[] lpBuffer,
+            int size,
+            IntPtr lpNumberOfBytesWritten
+        );
 
         [DllImport("kernel32.dll")]
-        private static extern uint VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
+        private static extern uint VirtualQueryEx(
+            IntPtr hProcess,
+            IntPtr lpAddress,
+            out MEMORY_BASIC_INFORMATION lpBuffer,
+            uint dwLength
+        );
+
+        #endregion
+
+        #region Structs
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MEMORY_BASIC_INFORMATION
+        {
+            public IntPtr BaseAddress;
+            public IntPtr AllocationBase;
+            public uint AllocationProtect;
+            public IntPtr RegionSize;
+            public uint State;
+            public uint Protect;
+            public uint Type;
+        }
+
         #endregion
 
         private Process _process;
 
+        /// <summary>
+        /// Attaches to a process by its name.
+        /// </summary>
+        /// <param name="processName">Name of the process to attach to.</param>
         public void Attach(string processName)
         {
-            _process = Process.GetProcessesByName(processName)[0];
+            Process[] processes = Process.GetProcessesByName(processName);
+            if (processes.Length == 0)
+            {
+                throw new ArgumentException($"Process '{processName}' not found.");
+            }
+
+            _process = processes[0];
         }
 
+        /// <summary>
+        /// Gets the base address of a module by its name.
+        /// </summary>
+        /// <param name="moduleName">Name of the module.</param>
+        /// <returns>Base address of the module.</returns>
         public IntPtr GetModuleBase(string moduleName)
         {
+            if (_process == null)
+            {
+                throw new InvalidOperationException("No process attached.");
+            }
+
             foreach (ProcessModule module in _process.Modules)
             {
                 if (module.ModuleName == moduleName)
@@ -41,74 +96,186 @@ namespace Capitalov
             return IntPtr.Zero;
         }
 
+        /// <summary>
+        /// Gets a list of all modules in the attached process.
+        /// </summary>
+        /// <returns>List of module names.</returns>
         public List<string> GetModules()
         {
-            List<string> modules = new List<string>();
-
-            foreach (ProcessModule module in _process.Modules)
+            if (_process == null)
             {
-                modules.Add(module.ModuleName);
+                throw new InvalidOperationException("No process attached.");
             }
 
-            return modules;
+            return _process.Modules.Cast<ProcessModule>().Select(m => m.ModuleName).ToList();
         }
 
-        public IntPtr ReadPointer(IntPtr ptr)
+        /// <summary>
+        /// Reads a pointer from the specified address.
+        /// </summary>
+        /// <param name="address">Address to read from.</param>
+        /// <returns>Pointer value.</returns>
+        public IntPtr ReadPointer(IntPtr address)
         {
-            byte[] buffer = new byte[8];
-
-            if (ReadProcessMemory(_process.Handle, ptr, buffer, buffer.Length, IntPtr.Zero))
-            {
-                return (IntPtr)BitConverter.ToInt64(buffer);
-            }
-            else
-            {
-                throw new Exception("Failed to read memory");
-            }
+            return Read<IntPtr>(address);
         }
 
-        public byte[] ReadBytes(IntPtr ptr, int bytes)
-        {
-            byte[] buffer = new byte[bytes];
-            ReadProcessMemory(_process.Handle, ptr, buffer, buffer.Length, IntPtr.Zero);
-
-            return buffer;
-        }
-
+        /// <summary>
+        /// Reads a value of type T from the specified address.
+        /// </summary>
+        /// <typeparam name="T">Type of the value to read.</typeparam>
+        /// <param name="address">Address to read from.</param>
+        /// <returns>Value of type T.</returns>
         public T Read<T>(IntPtr address) where T : struct
         {
-            var size = Marshal.SizeOf(typeof(T));
-            var bytes = ReadBytes(address, size);
+            int size = Marshal.SizeOf<T>();
+            byte[] buffer = new byte[size];
 
-            return ByteArrayToStructure<T>(bytes);
+            if (!ReadProcessMemory(_process.Handle, address, buffer, size, IntPtr.Zero))
+            {
+                throw new Exception("Failed to read memory.");
+            }
+
+            return ByteArrayToStructure<T>(buffer);
         }
 
+        /// <summary>
+        /// Reads a Vector3 from the specified address.
+        /// </summary>
+        /// <param name="address">Address to read from.</param>
+        /// <returns>Vector3 value.</returns>
         public Vector3 ReadVector(IntPtr address)
         {
-            return new Vector3(Read<float>(address), Read<float>(address + 4), Read<float>(address + 8));
+            return new Vector3
+            (
+                Read<float>(address),
+                Read<float>(address + 4),
+                Read<float>(address + 8)
+            );
         }
 
+        /// <summary>
+        /// Reads a string from the specified address.
+        /// </summary>
+        /// <param name="address">Address to read from.</param>
+        /// <param name="length">Length of the string.</param>
+        /// <returns>String value.</returns>
         public string ReadString(IntPtr address, int length)
         {
-            return Encoding.UTF8.GetString(ReadBytes(address, length));
+            byte[] buffer = new byte[length];
+            if (!ReadProcessMemory(_process.Handle, address, buffer, length, IntPtr.Zero))
+            {
+                throw new Exception("Failed to read memory.");
+            }
+
+            return Encoding.UTF8.GetString(buffer);
         }
 
-        public string ReadString(IntPtr address, int offset, int length)
-        {
-            return Encoding.UTF8.GetString(ReadBytes(address + offset, length));
-        }
-
+        /// <summary>
+        /// Reads a matrix (4x4 float array) from the specified address.
+        /// </summary>
+        /// <param name="address">Address to read from.</param>
+        /// <returns>Matrix as a float array.</returns>
         public float[] ReadMatrix(IntPtr address)
         {
-            var bytes = ReadBytes(address, 4 * 16);
-            var matrix = new float[16];
+            byte[] buffer = new byte[4 * 16];
+            if (!ReadProcessMemory(_process.Handle, address, buffer, buffer.Length, IntPtr.Zero))
+            {
+                throw new Exception("Failed to read memory.");
+            }
 
+            float[] matrix = new float[16];
             for (int i = 0; i < 16; i++)
             {
-                matrix[i] = BitConverter.ToSingle(bytes, i * 4);
+                matrix[i] = BitConverter.ToSingle(buffer, i * 4);
             }
 
             return matrix;
+        }
+
+        /// <summary>
+        /// Writes a value of type T to the specified address.
+        /// </summary>
+        /// <typeparam name="T">Type of the value to write.</typeparam>
+        /// <param name="address">Address to write to.</param>
+        /// <param name="value">Value to write.</param>
+        /// <returns>True if successful, otherwise false.</returns>
+        public bool Write<T>(IntPtr address, T value) where T : struct
+        {
+            byte[] buffer = StructureToByteArray(value);
+            return WriteProcessMemory(_process.Handle, address, buffer, buffer.Length, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Writes a Vector3 to the specified address.
+        /// </summary>
+        /// <param name="address">Address to write to.</param>
+        /// <param name="value">Vector3 value to write.</param>
+        /// <returns>True if successful, otherwise false.</returns>
+        public bool WriteVector(IntPtr address, Vector3 value)
+        {
+            return Write(address, value.X) && Write(address + 4, value.Y) && Write(address + 8, value.Z);
+        }
+
+        /// <summary>
+        /// Writes a string to the specified address.
+        /// </summary>
+        /// <param name="address">Address to write to.</param>
+        /// <param name="value">String value to write.</param>
+        /// <returns>True if successful, otherwise false.</returns>
+        public bool WriteString(IntPtr address, string value)
+        {
+            byte[] buffer = Encoding.UTF8.GetBytes(value);
+            return WriteProcessMemory(_process.Handle, address, buffer, buffer.Length, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Fills the specified memory region with NOP instructions (0x90).
+        /// </summary>
+        /// <param name="address">Address to start writing NOPs.</param>
+        /// <param name="length">Number of NOPs to write.</param>
+        /// <returns>True if successful, otherwise false.</returns>
+        public bool Nop(IntPtr address, int length)
+        {
+            byte[] buffer = Enumerable.Repeat((byte)0x90, length).ToArray();
+            return WriteProcessMemory(_process.Handle, address, buffer, buffer.Length, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Scans the process memory for a specific value of type T.
+        /// </summary>
+        /// <typeparam name="T">Type of the value to scan for.</typeparam>
+        /// <param name="value">Value to search for.</param>
+        /// <returns>A dictionary containing addresses and values where the value was found.</returns>
+        public Dictionary<IntPtr, T> ScanValue<T>(T value) where T : struct
+        {
+            var result = new Dictionary<IntPtr, T>();
+            IntPtr address = IntPtr.Zero;
+            MEMORY_BASIC_INFORMATION mbi;
+
+            while (VirtualQueryEx(_process.Handle, address, out mbi, (uint)Marshal.SizeOf<MEMORY_BASIC_INFORMATION>()) != 0)
+            {
+                if (mbi.State == 0x1000) // MEM_COMMIT
+                {
+                    byte[] buffer = new byte[mbi.RegionSize.ToInt32()];
+                    if (ReadProcessMemory(_process.Handle, mbi.BaseAddress, buffer, buffer.Length, IntPtr.Zero))
+                    {
+                        int size = Marshal.SizeOf<T>();
+                        for (int i = 0; i <= buffer.Length - size; i++)
+                        {
+                            T currentValue = ByteArrayToStructure<T>(buffer.Skip(i).Take(size).ToArray());
+                            if (EqualityComparer<T>.Default.Equals(currentValue, value))
+                            {
+                                result[mbi.BaseAddress + i] = currentValue;
+                            }
+                        }
+                    }
+                }
+
+                address = (IntPtr)((long)mbi.BaseAddress + mbi.RegionSize.ToInt64());
+            }
+
+            return result;
         }
 
         private T ByteArrayToStructure<T>(byte[] bytes) where T : struct
@@ -118,20 +285,19 @@ namespace Capitalov
 
             try
             {
-                result = (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
+                result = Marshal.PtrToStructure<T>(handle.AddrOfPinnedObject());
             }
             finally
             {
                 handle.Free();
             }
-
             return result;
         }
 
         private byte[] StructureToByteArray<T>(T obj) where T : struct
         {
-            var size = Marshal.SizeOf(typeof(T));
-            var bytes = new byte[size];
+            int size = Marshal.SizeOf<T>();
+            byte[] bytes = new byte[size];
             var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
 
             try
@@ -142,89 +308,7 @@ namespace Capitalov
             {
                 handle.Free();
             }
-
             return bytes;
-        }
-
-        public bool WriteBytes(IntPtr address, byte[] newbytes)
-        {
-            return WriteProcessMemory(_process.Handle, address, newbytes, newbytes.Length, IntPtr.Zero);
-        }
-
-        public bool Write<T>(IntPtr address, T value) where T : struct
-        {
-            var bytes = StructureToByteArray(value);
-            return WriteBytes(address, bytes);
-        }
-
-        public bool WriteVector(IntPtr address, Vector3 value)
-        {
-            return Write(address, value.X) && Write(address + 4, value.Y) && Write(address + 8, value.Z);
-        }
-
-        public bool WriteString(IntPtr address, string value)
-        {
-            return WriteBytes(address, Encoding.UTF8.GetBytes(value));
-        }
-
-        public bool Nop(IntPtr address, int length)
-        {
-            byte[] buffer = new byte[length];
-
-            for (int i = 0; i < length; i++)
-            {
-                buffer[i] = 0x90;
-            }
-
-            return WriteBytes(address, buffer);
-        }
-
-        public void ChangeValue<T>(T oldValue, T newValue) where T : struct
-        {
-            IntPtr address = IntPtr.Zero;
-            MEMORY_BASIC_INFORMATION mbi;
-
-            while (VirtualQueryEx(_process.Handle, address, out mbi, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION))) != 0)
-            {
-                if (mbi.State == 0x1000)
-                {
-                    byte[] buffer = new byte[mbi.RegionSize.ToInt32()];
-                    int bytesRead = 0;
-
-                    if (ReadProcessMemory(_process.Handle, mbi.BaseAddress, buffer, buffer.Length, IntPtr.Zero))
-                    {
-                        bytesRead = buffer.Length;
-
-                        int size = Marshal.SizeOf(typeof(T));
-                        for (int i = 0; i <= bytesRead - size; i++)
-                        {
-                            T value = ByteArrayToStructure<T>(buffer.Skip(i).Take(size).ToArray());
-
-                            if (EqualityComparer<T>.Default.Equals(value, oldValue))
-                            {
-                                byte[] newValueBytes = StructureToByteArray(newValue);
-                                WriteProcessMemory(_process.Handle, mbi.BaseAddress + i, newValueBytes, newValueBytes.Length, IntPtr.Zero);
-                            }
-                        }
-                    }
-                }
-
-                address = (IntPtr)((long)mbi.BaseAddress + mbi.RegionSize.ToInt64());
-            }
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-
-        public struct MEMORY_BASIC_INFORMATION
-        {
-            public IntPtr BaseAddress;
-            public IntPtr AllocationBase;
-            public uint AllocationProtect;
-            public IntPtr RegionSize;
-            public uint State;
-            public uint Protect;
-            public uint Type;
         }
     }
 }
-
