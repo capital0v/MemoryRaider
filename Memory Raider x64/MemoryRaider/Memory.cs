@@ -230,6 +230,17 @@ namespace Capitalov
         }
 
         /// <summary>
+        /// Writes an array of bytes to the specified memory address in the attached process.
+        /// </summary>
+        /// <param name="address">The memory address to write to.</param>
+        /// <param name="bytes">The byte array to write.</param>
+        /// <returns>True if the write operation succeeds; otherwise, false.</returns>
+        public bool WriteBytes(IntPtr address, byte[] bytes)
+        {
+            return WriteProcessMemory(_process.Handle, address, bytes, bytes.Length, IntPtr.Zero);
+        }
+
+        /// <summary>
         /// Fills the specified memory region with NOP instructions (0x90).
         /// </summary>
         /// <param name="address">Address to start writing NOPs.</param>
